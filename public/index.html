@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Dish Book</title>
+</head>
+<body>
+  <h1>Recipe List</h1>
+  <table border="1" id="dishesTable"></table>
+
+  <h2>Add New Dish</h2>
+  <form id="dishForm">
+    Name: <input name="name"><br>
+    Ingredients: <input name="ingredients"><br>
+    <label for="preparationSteps">Preparation Steps:</label><br>
+    <textarea name="preparationSteps" rows="5" cols="40" style="resize: vertical;"></textarea>
+    <br>
+    Cooking Time (in mins): <input name="cookingTime"><br>
+    Origin: <input name="origin"><br>
+    <label for="difficulty">Difficulty:</label>     
+    <select name="difficulty">
+  <option value="easy">Easy</option>
+  <option value="medium">Medium</option>
+  <option value="master">Master Chef</option>
+    </select>
+    <br>
+    <button type="submit">Add Dish</button>
+    <button type="submit">Update Dish</button>
+  </form>
+
+  <script>
+    async function loadDishes() {
+      const res = await fetch("/api/dishes");
+      const data = await res.json();  //converting the response received from server to json
+      const table = document.getElementById("dishesTable");
+      table.innerHTML = "<tr><th>Dish Name</th><th>Update</th><th>Delete</th></tr>";
+      data.forEach(dish => {
+        const row = document.createElement("tr");
+        row.innerHTML = `<td>${dish.name}</td>
+         <td>
+            <button onclick="updateDish('${dish._id}')">Update Dish</button>
+        </td>
+          <td>
+            <button onclick="deleteDish('${dish._id}')">Delete Dish</button>
+          </td>`;
+        table.appendChild(row);
+      });
+    }
+
+    async function deleteDish(id) {
+      if (confirm("Are you sure?")) {
+        await fetch("/api/dishes/" + id, { method: "DELETE" });
+        loadDishes();
+      }
+    }
+
+    document.getElementById("dishForm").onsubmit = async (e) => {
+      e.preventDefault();  //Stop the page from refreshing so it can be handled via js 
+      const form = e.target; // Get the form that is submitted
+      //To create a js object
+      const body = {
+        name: form.name.value,
+        ingredients: form.ingredients.value,
+        preparationSteps: form.preparationSteps.value,
+        cookingTime: form.cookingTime.value,
+        origin: form.origin.value,
+        difficulty: form.difficulty.value,
+      };
+
+      try{
+        const res = await fetch("api/dishes",{
+            method: "POST",
+            headers: {"Content-Type" : "application/json"},
+            body: JSON.stringify(body), //sending a body object as a json string to server
+        });
+
+        const message = await res.text(); //message received from backend api
+        if (res.ok){
+            alert(message);
+        }else{
+            alert(message);
+        }    
+        form.reset();
+        loadDishes();
+
+      } catch (error){
+        alert("Failed to add dish :" + error.message)
+      
+    }};
+
+    loadDishes();
+  </script>
+</body>
+</html>
