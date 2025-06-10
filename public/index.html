@@ -70,7 +70,7 @@
 
     async function updateDish(btn){
       const row = btn.closest("tr") //finds the table row where button is located.
-      const cells = row.querySelectorAll ("td[contenteditable]");
+      const cells = row.querySelectorAll ("td[contentEditable]");
       const id = row.dataset.id;
 
       if(btn.textContent ==="Update Dish"){
@@ -112,7 +112,7 @@
       
 
     async function deleteDish(id) {
-      if (confirm("Are you sure?")) {
+      if (confirm("Are you sure you want to delete the recipe ?")) {
         await fetch("/api/dishes/" + id, { method: "DELETE" });
         loadDishes();
       }
