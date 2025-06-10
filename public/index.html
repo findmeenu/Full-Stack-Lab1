@@ -4,11 +4,17 @@
   <title>Dish Book</title>
 </head>
 <body>
+  <h2>Search Dish by Name</h2>
+<input type="text" id="searchInput" placeholder="Enter dish name">
+<button onclick="searchDish()">Search</button>
+<div id="searchResult"></div>
+
   <h1>Recipe List</h1>
   <table border="1" id="dishesTable"></table>
 
   <h2>Add New Dish</h2>
   <form id="dishForm">
+  
     Name: <input name="name"><br>
     Ingredients: <input name="ingredients"><br>
     <label for="preparationSteps">Preparation Steps:</label><br>
@@ -24,7 +30,7 @@
     </select>
     <br>
     <button type="submit">Add Dish</button>
-    <button type="submit">Update Dish</button>
+    
   </form>
 
   <script>
@@ -32,12 +38,28 @@
       const res = await fetch("/api/dishes");
       const data = await res.json();  //converting the response received from server to json
       const table = document.getElementById("dishesTable");
-      table.innerHTML = "<tr><th>Dish Name</th><th>Update</th><th>Delete</th></tr>";
+      table.innerHTML = 
+      `<tr><th>Dish Name</th>
+        <th>Ingredients</th>
+        <th>Preparation Steps</th>
+        <th>Cooking Time (in mins)</th>
+        <th>Origin</th>
+        <th>Difficulty</th>
+        <th>Update</th>
+        <th>Delete</th></tr>`;
       data.forEach(dish => {
         const row = document.createElement("tr");
-        row.innerHTML = `<td>${dish.name}</td>
+         row.dataset.id = dish._id;            // store the id
+        row.innerHTML = 
+        `<td contentEditable  = "false">${dish.name}</td>
+        <td contentEditable  = "false">${dish.ingredients}</td>
+        <td contentEditable  = "false">${dish.preparationSteps}</td>
+        <td contentEditable  = "false">${dish.cookingTime}</td>
+        <td contentEditable  = "false">${dish.origin}</td>
+        <td contentEditable  = "false">${dish.difficulty}</td>
          <td>
-            <button onclick="updateDish('${dish._id}')">Update Dish</button>
+            <button onclick="updateDish(this)">Update Dish</button>
+        
         </td>
           <td>
             <button onclick="deleteDish('${dish._id}')">Delete Dish</button>
@@ -45,6 +67,49 @@
         table.appendChild(row);
       });
     }
+
+    async function updateDish(btn){
+      const row = btn.closest("tr") //finds the table row where button is located.
+      const cells = row.querySelectorAll ("td[contenteditable]");
+      const id = row.dataset.id;
+
+      if(btn.textContent ==="Update Dish"){
+        cells.forEach (cell => cell.contentEditable  ="true");
+        btn.textContent="Save";
+        cells[0].focus(); //place cursor as cell 0 i.e name cell
+      }
+      else {
+        cells.forEach (cell => cell.contenteditable="false");
+        const [ name,
+                ingredients,
+                preparationSteps,
+                cookingTime,
+                origin,
+                difficulty ] = Array.from(cells).map(c => c.textContent.trim());
+
+        try {
+          const res = await fetch(`/api/dishes/${id}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              name, ingredients, preparationSteps,
+              cookingTime, origin, difficulty
+            })
+          });
+          if (!res.ok) {
+            const msg = await res.text();
+            throw new Error(msg);
+          }
+          alert("Dish updated successfully!");
+        } catch (err) {
+          alert("Error updating dish: " + err.message);
+        }
+
+        btn.textContent = "Update Dish";
+      }
+    }
+
+      
 
     async function deleteDish(id) {
       if (confirm("Are you sure?")) {
@@ -88,6 +153,35 @@
     }};
 
     loadDishes();
+
+
+async function searchDish() {
+  const name = document.getElementById("searchInput").value.trim(); // spaces are timmed.
+  if (!name) return alert("Please enter a dish name.");
+  try {
+    const res = await fetch(`/api/dishes/${encodeURIComponent(name)}`);
+    if (!res.ok) throw new Error(await res.text());
+
+    const dish = await res.json();   
+    const container = document.getElementById("searchResult");
+
+    container.innerHTML = `
+      <h3>Search Result</h3>
+      <div style="border:1px solid #ccc; padding:10px; margin-top:10px;">
+        <p><strong>Dish Name:</strong> ${dish.name}</p>
+        <p><strong>Ingredients:</strong> ${dish.ingredients}</p>
+        <p><strong>Preparation Steps:</strong> ${dish.preparationSteps}</p>
+        <p><strong>Cooking Time:</strong> ${dish.cookingTime} minutes</p>
+        <p><strong>Origin:</strong> ${dish.origin}</p>
+        <p><strong>Difficulty:</strong> ${dish.difficulty}</p>
+      </div>
+    `;
+
+  } catch (err) {
+    alert("Error searching dish: " + err.message);
+    document.getElementById("searchResult").innerHTML = ""; // Clear result box
+  }
+}
   </script>
 </body>
 </html>

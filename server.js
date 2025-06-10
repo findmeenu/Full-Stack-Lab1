@@ -23,11 +23,13 @@ app.get("/api/dishes", async(req, res) => {
     });
 
 // GET /api/dishes/:name – Return a dish by name. Return 404 if it doesn't exist.
-app.get("api/dishes/:name", async(req, res) => {
+app.get("/api/dishes/:name", async(req, res) => {
     const dish = await dishes.findOne({name: req.params.name});
     if (!dish ) return res.status(404).send("Dish does not exist.");
     res.json(dish);
 });
+
+
 
 // POST /api/dishes – Add a new dish. Return 201 if successful, or 409 if it already exists.
 app.post("/api/dishes", async(req, res)=> {
